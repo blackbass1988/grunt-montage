@@ -14,8 +14,9 @@ module.exports = function (grunt) {
         }).join(" ") + " }\n";
     }
 
-    grunt.registerMultiTask("montage", "Generate CSS sprite sheets and the corresponding stylesheet", function () {
+    grunt.registerMultiTask("montage", "Generate CSS sprite sheets and the corresponding stylesheet",
 
+      function () {
         // It's an async task so make sure Grunt knows this
         var done = this.async(),
             cliOptions = "",
@@ -82,9 +83,22 @@ module.exports = function (grunt) {
 
             grunt.file.write(path.join(files.dest, options.outputStylesheet), css);
 
+            var escapeFiles = function (file) {
+                var extname = path.extname(file),
+                    filename = path.basename(file, extname),
+                    dirname = path.dirname(file);
+                return dirname + "/" + filename.replace(rSpecial, "\\$1") + extname;
+            };
+
             // Execute the ImageMagick montage tool
-            exec("montage -tile " + cols + "x -geometry " + options.size + "x" + options.size + " " + cliOptions + " " + src.join(" ") + " " + dest, function (err) {
-                done();
+            var command = "montage -tile " + cols + "x -geometry " + options.size + "x" +
+              options.size + " " + cliOptions + " " + src.map(escapeFiles).join(" ") + " " + dest;
+            exec(command, function (err) {
+                if (err) {
+                    console.error(err);
+                } else {
+                    done();
+                }
             });
         });
     });
